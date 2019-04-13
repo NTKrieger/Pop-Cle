@@ -1,0 +1,12 @@
+Options:
+
+Roll Random
+New Quote +
+New Attribution +
+New Picture
+Edit Text
+Edit Attribution
+Add Name to Random List +
+Show Names
+Remove Name from Random List
+Add to Gallery
