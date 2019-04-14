@@ -4,14 +4,11 @@ const Jimp = require("jimp");
 const Twit = require("twit");
 const axios = require("axios");
 const fs = require("fs");
-
-// config files
-
-//const unsplashConfig = require("./config/unsplashConfig")
+const unsplashConfig = require("./config/unsplashConfig.js")
 let globals = require("./config/globals.js")
 
 loadText =()=>{
-    globals.markov = Rita.RiMarkov(4, true, false)	
+    globals.markov = Rita.RiMarkov(2, true, false)
     globals.markov.loadText(globals.sourceText)
 }
 exports.loadText = loadText
@@ -53,20 +50,22 @@ exports.generateGlobals = generateGlobals
 getRandomPhoto = async()=>{
     try{
         let response = await axios.get("https://api.unsplash.com/photos/random/?client_id=" + unsplashConfig.application_ID)
-        if(response.data.results[rI % 10].height > response.data.results[rI % 10].width){
-            await getRandomPhoto()
-        }else{
-            globals.height = response.data.height
-            globals.width = response.data.width
-            globals.url = response.data.urls.raw
-            globals.photographer = response.data.user.name  
-        } 
+        globals.height = response.data.height
+        globals.width = response.data.width
+        globals.url = response.data.urls.raw
+
     }
     catch (error){
         console.log(error)
     }
 }
 exports.getRandomPhoto = getRandomPhoto
+
+getRandomName=()=>{
+    var rI = Math.floor(Math.random() * globals.nameArray.length)
+    return globals.nameArray[rI]
+}
+exports.getRandomName = getRandomName
 
 setSearchTerm =()=>{
     var wordString = Rita.RiString(globals.text)
@@ -87,6 +86,7 @@ cleanText =()=>{
     var sentence = Rita.RiString(globals.text)
     var wordArray = sentence.words()
     var posArray = sentence.pos()
+    var quoteFlag = true
     
     if (sentence.length > 100){
         Methods.generateText()
@@ -119,7 +119,12 @@ cleanText =()=>{
         wordArray[0] == "When" ||
         wordArray[0] == "Why"  ||
         wordArray[0] == "How"  ||
+        wordArray[0] == "Did"  ||
+        wordArray[0] == "Does" ||
+        wordArray[0] == "Is"   ||
         wordArray[0] == "Which"||
+        wordArray[0] == "Should"||
+        wordArray[0] == "Would"||
         wordArray[0] == "Who"  ||
         wordArray[0] == "Whose"||
         wordArray[0] == "Whom" ){
@@ -131,6 +136,24 @@ cleanText =()=>{
     }else if(sentence.charAt(sentence.length()-1) == `?`){
         sentence.replaceChar((sentence.length()-1),`.`)
     }
+    //replace names with other names or create a quotation
+    for(i=0; i < wordArray.length; ++i){
+        if (wordArray[i] == "K" || wordArray[i] == "Leni" || wordArray[i] == "Huld" || wordArray[i] == "Bürstner" || wordArray[i] == "Franz"){
+            sentence.replaceWord(i, getRandomName())
+            quoteFlag = false
+        }
+            
+        if (wordArray[i] == "K's" || wordArray[i] == "Leni's" || wordArray[i] == "Huld's" || wordArray[i] == "Bürstner's" || wordArray[i] == "Franz's"){
+            sentence.replaceWord(i, getRandomName() + "'s")
+            quoteFlag = false
+        }
+    }
+    //remove all quotations
+    for(i = 0; i < sentence.length; ++i){
+        if(sentence.charAt(i) == `"`)
+            sentence.removeChar(i)
+    }
+
     //remove numerals, complete quotations, check for incomplete parentheticals, and convert from RiString to string
     var quoteMarks = 0
     var parentheses = 0
@@ -163,7 +186,13 @@ cleanText =()=>{
     } else {
         sentence = sentence.text()
     }
-    globals.text = sentence
+       //if a name hasn't been replaced, create a quotation
+    if (quoteFlag == true){
+        globals.text = `"` + sentence + `"` + " -" + " " + getRandomName()
+    } else {
+        globals.text = sentence
+    }
+    
     console.log("cleanText out: " + globals.text)
 }
 exports.cleanText = cleanText
@@ -217,6 +246,8 @@ setJimpParams = ()=>{
 exports.setJimpParams = setJimpParams
 
 writeOnPicture =()=>{
+    var fileName = "./img" + Date.now() + ".png"
+    globals.fileName = fileName
     var loadedImage
     Jimp.read(globals.url)
         .then(function (image) {
@@ -226,31 +257,10 @@ writeOnPicture =()=>{
         .then(function (font) {
             loadedImage.resize(globals.resizeWidth, Jimp.AUTO)
                        .print(font, globals.xstart, globals.ystart, globals.text, globals.xwrap)
-                       .write("./meme.png")
+                       .write(fileName)
         })
         .catch(function (err) {
             console.error(err)
         })
 }
 exports.writeOnPicture = writeOnPicture
-
-postTweet =()=>{
-    var Twitter = new Twit(twitterConfig)
-    var b64content = fs.readFileSync("./meme.png", { encoding: 'base64' })
-    var photoCredit =  "Photographer: " + globals.photographer
-    Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
-        var mediaId = data.media_id_string
-        var altText = globals.text
-        var meta_params = { media_id: mediaId, alt_text: { text: altText } }
-        Twitter.post('media/metadata/create', meta_params, function (err, data, response) {
-            if (!err) {
-                var params = { status: photoCredit, media_ids: [mediaId] }
-                Twitter.post('statuses/update', params, function (err, data, response) {
-                    console.log(data)
-                })
-            } else
-                console.log(err)
-        })
-    }) 
-}
-exports.postTweet = postTweet

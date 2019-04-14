@@ -12,6 +12,12 @@ $(document).ready(function() {
             $("#attribution").text(data)
         })
     })
+    $("#getFullRandom").click(()=>{
+        $.get("http://localhost:32000/getImage", function(data, status){
+            console.log(data, status)
+            $("#image").attr("src", data)
+        })
+    })
     $("#addName").click(()=>{
         let params = {
             name: $("#addNameInput").val()

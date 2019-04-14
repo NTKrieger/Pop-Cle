@@ -13,7 +13,8 @@ module.exports={
     markov: "",
     name: "",
     nameArray: [],
-    sourceText: ""
+    sourceText: "",
+    fileName: ""
 }
 
 

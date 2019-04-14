@@ -30,8 +30,12 @@ server.get("/quotation", (req, res) =>{
     res.send(globals.text)
 })
 server.get("/name", (req, res) =>{
-    getName()
-    res.send(globals.name)
+    res.send(Methods.getRandomName())
+})
+server.get("/getImage", (req, res) =>{
+    
+    getImage() 
+    res.send(globals.fileName)
 })
 server.post("/name", (req, res, next) => {  
     addName(req.body.name)
@@ -45,10 +49,6 @@ getQuote=()=>{
     Methods.generateText()
     Methods.cleanText() 
 }
-getName=()=>{
-    var rI = Math.floor(Math.random() * globals.nameArray.length)
-    globals.name = globals.nameArray[rI]
-}
 addName=(name)=>{
     globals.nameArray.push(name)
     var newNameList = globals.nameArray.toString()
@@ -56,6 +56,12 @@ addName=(name)=>{
         if (err) throw err;
         console.log('Saved!');
     });
+}
+async function getImage() {
+    Methods.setSearchTerm()
+    await Methods.generateGlobals()
+    Methods.setJimpParams()
+    Methods.writeOnPicture() 
 }
 
 
