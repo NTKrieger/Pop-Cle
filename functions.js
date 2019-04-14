@@ -5,7 +5,7 @@ const Twit = require("twit");
 const axios = require("axios");
 const fs = require("fs");
 const unsplashConfig = require("./config/unsplashConfig.js")
-let globals = require("./config/globals.js")
+let globals = require("./secret/globals.js")
 
 loadText =()=>{
     globals.markov = Rita.RiMarkov(2, true, false)
@@ -241,7 +241,6 @@ setJimpParams = ()=>{
             globals.ystart = (globals.resizeHeight - 300)
     }
     globals.xwrap = globals.resizeWidth - 25
-    console.log(globals.ystart)
 }
 exports.setJimpParams = setJimpParams
 
